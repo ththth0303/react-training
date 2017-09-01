@@ -1,11 +1,14 @@
 import React from 'react';
 import './app.scss';
+import Input from './components/input';
+import List from './components/list';
 
-export class App extends React.Component {
+export default class App extends React.Component {
+    
     render () {
         return (
-            <div id="content">
-                <button className="btn">New User</button>
+            <div>                
+                <List />
             </div>
         )
     }
