@@ -3,6 +3,8 @@ import Item from './item';
 import Filter from '../filter';
 import Input from '../input';
 import _map from 'lodash/map';
+import _findIndex from 'lodash/findIndex';
+import './list.scss';
 
 export default class App extends React.Component {
     constructor(props) {
@@ -18,13 +20,20 @@ export default class App extends React.Component {
                 {id: 7, name: 'Test todo 7', completed: false}
             ],
             filter: 'SHOW_ALL',
-            value: ''
+            value: '',
+            edit: null
         }
         this.onChangeFilter = this.onChangeFilter.bind(this);
         this.addTodo = this.addTodo.bind(this);
+        this.deleteTodo = this.deleteTodo.bind(this);
+        this.changeStatus = this.changeStatus.bind(this);
+        this.editItem = this.editItem.bind(this);
+        this.updateItem = this.updateItem.bind(this);
+        this.onBlur = this.onBlur.bind(this);
     }
+
     onChangeFilter(filter) {
-        this.setState({filter: filter});
+        this.setState({filter: filter, edit: null});
     }
 
     filterTodo() {
@@ -41,34 +50,85 @@ export default class App extends React.Component {
     }
 
     addTodo(e) {
+        if (e) {
+            const todos = this.state.todos;
+            let ids = _map(todos, 'id');
+            let max = Math.max(...ids);
+            todos.push({
+                id: max+1,
+                name: e,
+                completed: false
+            });
+            this.setState({todos});
+            this.todo.setState({value: '', err:false, isCreating: false});
+
+        } else {
+            this.todo.setState({err: true});
+        }
+    }
+
+    deleteTodo(id) {
         const todos = this.state.todos;
-        let ids = _map(todos, 'id');
-        let max = Math.max(...ids);
-        todos.push({
-            id: max+1,
-            name: e,
-            completed: false
-        });
-        this.setState({todos});
-        this.todo.setState({value: ''});
+        let filter = todos.filter(t => t.id !== id);
+        this.setState({todos: filter});
+    }
+
+    changeStatus(id) {
+        const todos = this.state.todos;
+        let index = _findIndex(todos, {id});
+        if (index !== -1) {
+            let todo = todos[index];
+            todo.completed = !todo.completed;
+            todos[index] = todo;
+            this.setState({todos});
+        }
+    }
+
+    editItem(item) {
+        this.setState({edit: item.id});
+    }
+
+    updateItem (id, text, e) {
+
+            const todos = this.state.todos;
+            let index = _findIndex(todos, {id});
+            if (index !== -1) {
+                let todo = todos[index];
+                todo.name = text;
+                todos[index] = todo;
+                this.setState({todos});
+                if (e.keyCode === 13) {
+                    this.onBlur();
+                }
+            }
+    }
+
+    onBlur () {
+        this.setState({edit: null})
     }
 
     render () {
 
         return (
-            <div>
-                <Filter onClick={this.onChangeFilter}/>
-                <table>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                     </tr>
-                    {this.filterTodo().map((item) =>
-                        <Item id={item.id} name={item.name} key={item.id}/>
-                    )}
+            <div className="content">
+                <Filter onClick={this.onChangeFilter} filter={this.state.filter}/>
+                <table className="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th className="name">Name</th>
+                            <th>Completed</th>
+                            <th colSpan="2">Action</th>
+                         </tr>
+                    </thead>
+                    <tbody>
+                        {this.filterTodo().length ? this.filterTodo().map((item) =>
+                            <Item item={item} key={item.id} delete={() => this.deleteTodo(item.id)} changeStatus={this.changeStatus} editing={this.state.edit == item.id} ref={(c) => {this.item = c;}} editItem={this.editItem} updateItem={this.updateItem} onBlur={this.onBlur}/>
+                        ) : <tr><td colSpan="4">No Data</td></tr>}
+                    </tbody>
                 </table>
                 <Input addTodo={this.addTodo} value={this.state.value} ref={(c) => {this.todo = c;}}/>
-            </div>    
+            </div>
         )
     }
 }
