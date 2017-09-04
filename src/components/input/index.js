@@ -1,4 +1,11 @@
 import React from 'react';
+import {
+  BrowserRouter as Router,
+  Route,
+  Link,
+  HashRouter,
+  BrowserHistory,
+} from 'react-router-dom'
 
 export default class App extends React.Component {
     constructor(props) {
@@ -34,16 +41,16 @@ export default class App extends React.Component {
         if(this.state.isCreating) {
             return (
                 <div id="content">
-                    <input className="form-control" autoFocus onChange={this.handleChange} value={this.state.value} ref={(c) => {this.todo = c;}} onKeyUp={(e) => this.checkEnter(e)} focus></input>
-                    <button className="btn btn-primary" onClick={() => this.props.addTodo(this.getValue())}>Save</button>
+                    <input className="form-control" autoFocus onChange={this.handleChange} value={this.state.value} ref={(c) => {this.todo = c;}} onKeyUp={(e) => this.checkEnter(e)}></input>
+                    {this.state.err ? <p className="text-danger">không được để trống</p> : null}
+                    <button className="btn btn-info" onClick={() => this.props.addTodo(this.getValue())}>Save</button>
                     <button className="btn btn-warning" onClick={() => this.cancel()}>Cancel</button>
-                    {this.state.err ? <span>không được để trống</span> : null}
                 </div>
             )
         }
         return (
             <div id="content">
-                <button className="btn btn-primary" onClick={() => this.setState({isCreating: true}) } onChange={this.handleChange}>New User</button>
+                <button className="btn btn-info" onClick={() => this.setState({isCreating: true}) } onChange={this.handleChange}>Create Todo</button>
             </div>
         )
     }

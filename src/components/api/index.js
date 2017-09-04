@@ -9,7 +9,7 @@ export function fetchTodoList(callback) {
 export function createTodo(param, callback) {
     return axios.post(baseUrl, {name: param.name, completed: param.completed})
                 .then(response => callback(response))
-                .catch(error => error);
+                .catch(error => callback(error));
 }
 
 export function updateTodo(param, callback) {
@@ -20,7 +20,7 @@ export function updateTodo(param, callback) {
 
 export function deleteTodo(id, callback) {
     return axios.delete(`${baseUrl}/${id}`)
-                .then(response => callback(response))
+                .then(response => callback(response, id))
                 .catch(error => error);
 }
 
