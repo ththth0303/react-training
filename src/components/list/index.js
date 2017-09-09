@@ -6,6 +6,7 @@ import _map from 'lodash/map';
 import _findIndex from 'lodash/findIndex';
 import './list.scss';
 import {fetchTodoList, createTodo, updateTodo, deleteTodo} from '../api';
+import openSocket from 'socket.io-client';
 
 export default class App extends React.Component {
     constructor(props) {
@@ -14,7 +15,8 @@ export default class App extends React.Component {
             todos: [],
             filter: 'SHOW_ALL',
             value: '',
-            edit: null
+            edit: null,
+            socket: null
         }
         this.onChangeFilter = this.onChangeFilter.bind(this);
         this.addTodo = this.addTodo.bind(this);
@@ -27,12 +29,19 @@ export default class App extends React.Component {
         this.changeStatusUpdate = this.changeStatusUpdate.bind(this);
         this.deleteTodoUpdate = this.deleteTodoUpdate.bind(this);
         this.countTodo = this.countTodo.bind(this);
+        this.socketAddTodo = this.socketAddTodo.bind(this);
+        this.socketDeleteTodo = this.socketDeleteTodo.bind(this);
+        this.socketChangeStatus = this.socketChangeStatus.bind(this);
     }
 
     componentWillMount() {
+        const socket = openSocket('http://localhost:6969');
         fetchTodoList((response) => {
-            this.setState({todos: response.data})
+            this.setState({todos: response.data, socket})
         });
+        socket.on('newTodo', (response) => {this.addTodoUpdate(response)});
+        socket.on('deleteTodo', (response) => {this.deleteTodoUpdate(response)});
+        socket.on('changeStatus', (response) => {this.changeStatusUpdate(response)});
     }
 
     onChangeFilter(filter) {
@@ -65,7 +74,20 @@ export default class App extends React.Component {
 
     addTodo(e) {
         e = {name: e, completed: false};
-        createTodo(e, this.addTodoUpdate);
+        createTodo(e, this.socketAddTodo);
+    }
+    socketAddTodo(response) {
+        this.state.socket.emit('newTodo', response);
+    }
+
+    socketChangeStatus(response) {
+        this.state.socket.emit('changeStatus', response);
+    }
+
+    socketDeleteTodo(response, id) {
+        console.log(response)
+        console.log(id)
+        this.state.socket.emit('deleteTodo', id);
     }
 
     addTodoUpdate(response) {
@@ -82,10 +104,10 @@ export default class App extends React.Component {
 
 
     deleteTodo(id) {
-        deleteTodo(id, this.deleteTodoUpdate);
+        deleteTodo(id, this.socketDeleteTodo);
     }
 
-    deleteTodoUpdate(response, id) {
+    deleteTodoUpdate(id) {
         const todos = this.state.todos;
         let filter = todos.filter(t => t.id !== id);
         this.setState({todos: filter});
@@ -93,7 +115,7 @@ export default class App extends React.Component {
 
     changeStatus(item) {
             item.completed = !item.completed;
-            updateTodo(item, this.changeStatusUpdate);
+            updateTodo(item, this.socketChangeStatus);
     }
 
     changeStatusUpdate(response) {
